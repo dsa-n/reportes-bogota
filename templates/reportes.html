@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todos los Reportes - Mapa Ciudadano</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50">
+  
+  <!-- HEADER -->
+  <header class="bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold">📋 Todos los Reportes</h1>
+        <p class="text-sm text-teal-100">Historial completo de reportes ciudadanos</p>
+      </div>
+      <a href="/" class="bg-white text-teal-700 px-4 py-2 rounded-lg font-semibold hover:bg-teal-50 transition">
+        ← Volver al mapa
+      </a>
+    </div>
+  </header>
+
+  <!-- CONTENIDO -->
+  <div class="container mx-auto px-4 py-8">
+    
+    <!-- ESTADÍSTICAS -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-3xl font-bold text-teal-600">{{ reportes|length }}</div>
+        <div class="text-sm text-gray-600">Total de reportes</div>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-3xl font-bold text-orange-600">
+          {{ reportes|selectattr('tipo', 'equalto', 'Basura')|list|length }}
+        </div>
+        <div class="text-sm text-gray-600">Basura acumulada</div>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-3xl font-bold text-blue-600">
+          {{ reportes|selectattr('tipo', 'equalto', 'Huecos')|list|length }}
+        </div>
+        <div class="text-sm text-gray-600">Huecos en vías</div>
+      </div>
+      
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-3xl font-bold text-purple-600">
+          {{ reportes|selectattr('tipo', 'equalto', 'Luz')|list|length }}
+        </div>
+        <div class="text-sm text-gray-600">Problemas de luz</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <h2 class="text-lg font-bold text-gray-800 mb-4">🔍 Filtrar reportes</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo de problema</label>
+          <select id="filtroTipo" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            <option value="">Todos</option>
+            <option value="Basura">🗑️ Basura acumulada</option>
+            <option value="Huecos">🕳️ Huecos en la vía</option>
+            <option value="Luz">💡 Falta de alumbrado</option>
+            <option value="Ruido">🔊 Contaminación sonora</option>
+            <option value="Agua">💧 Fuga de agua</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Entidad responsable</label>
+          <select id="filtroEntidad" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            <option value="">Todas</option>
+            <option value="UAESP">UAESP</option>
+            <option value="IDU">IDU</option>
+            <option value="Secretaría de Ambiente">Secretaría de Ambiente</option>
+            <option value="EAAB">EAAB</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar por palabra</label>
+          <input type="text" id="busqueda" placeholder="Buscar..." 
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+        </div>
+      </div>
+      <button onclick="aplicarFiltros()" 
+              class="mt-4 bg-teal-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-teal-700 transition">
+        Aplicar filtros
+      </button>
+      <button onclick="limpiarFiltros()" 
+              class="mt-4 ml-2 bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition">
+        Limpiar
+      </button>
+    </div>
+
+    <!-- TABLA DE REPORTES -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-teal-600 text-white">
+            <tr>
+              <th class="px-4 py-3 text-left text-sm font-semibold">ID</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Tipo</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Descripción</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Imagen</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Ciudadano</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Entidad</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold">Fecha y Hora</th>
+              <th class="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaReportes">
+            {% for reporte in reportes %}
+            <tr class="border-b hover:bg-gray-50 transition reporte-row" 
+                data-tipo="{{ reporte.tipo }}" 
+                data-entidad="{{ reporte.entidad }}"
+                data-descripcion="{{ reporte.descripcion|lower }}"
+                data-nombre="{{ reporte.nombre|lower }}">
+              <td class="px-4 py-3 text-sm text-gray-700">#{{ reporte.id }}</td>
+              <td class="px-4 py-3">
+                <span class="bg-teal-100 text-teal-800 text-xs font-semibold px-2 py-1 rounded">
+                  {{ reporte.tipo }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700 max-w-xs">
+                {{ reporte.descripcion[:100] }}{% if reporte.descripcion|length > 100 %}...{% endif %}
+              </td>
+              <td class="px-4 py-3 text-center">
+                {% if reporte.imagen %}
+                  <img src="/static/images/{{ reporte.imagen }}" alt="Imagen" style="max-width:80px;max-height:80px;border-radius:8px;">
+                {% else %}
+                  <span class="text-gray-400 text-xs">Sin imagen</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-700">{{ reporte.nombre }}</td>
+              <td class="px-4 py-3 text-sm text-gray-600">{{ reporte.entidad }}</td>
+              <td class="px-4 py-3 text-sm text-gray-600">
+                <div>📅 {{ reporte.fecha_creacion.split(' ')[0] }}</div>
+                <div>🕐 {{ reporte.fecha_creacion.split(' ')[1] }}</div>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <button onclick="verDetalle({{ reporte.id }})" 
+                        class="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 mr-1">
+                  Ver
+                </button>
+                <button onclick="eliminarReporte({{ reporte.id }})" 
+                        class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Si no hay reportes -->
+      {% if reportes|length == 0 %}
+      <div class="text-center py-12">
+        <div class="text-6xl mb-4">📭</div>
+        <p class="text-gray-600">No hay reportes registrados aún</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Modal para ver detalle -->
+  <div id="modalDetalle" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-start mb-4">
+          <h2 class="text-2xl font-bold text-gray-800">Detalle del Reporte</h2>
+          <button onclick="cerrarModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+        </div>
+        <div id="contenidoModal" class="space-y-4">
+          <!-- Se llena dinámicamente -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const reportesData = {{ reportes|tojson }};
+    
+    // Filtrar reportes
+    function aplicarFiltros() {
+      const filtroTipo = document.getElementById('filtroTipo').value.toLowerCase();
+      const filtroEntidad = document.getElementById('filtroEntidad').value.toLowerCase();
+      const busqueda = document.getElementById('busqueda').value.toLowerCase();
+      
+      const filas = document.querySelectorAll('.reporte-row');
+      
+      filas.forEach(fila => {
+        const tipo = fila.dataset.tipo.toLowerCase();
+        const entidad = fila.dataset.entidad.toLowerCase();
+        const descripcion = fila.dataset.descripcion;
+        const nombre = fila.dataset.nombre;
+        
+        const coincideTipo = !filtroTipo || tipo === filtroTipo;
+        const coincideEntidad = !filtroEntidad || entidad === filtroEntidad;
+        const coincideBusqueda = !busqueda || 
+                                  descripcion.includes(busqueda) || 
+                                  nombre.includes(busqueda);
+        
+        if (coincideTipo && coincideEntidad && coincideBusqueda) {
+          fila.style.display = '';
+        } else {
+          fila.style.display = 'none';
+        }
+      });
+    }
+    
+    // Limpiar filtros
+    function limpiarFiltros() {
+      document.getElementById('filtroTipo').value = '';
+      document.getElementById('filtroEntidad').value = '';
+      document.getElementById('busqueda').value = '';
+      aplicarFiltros();
+    }
+    
+    // Ver detalle de reporte
+    function verDetalle(id) {
+      const reporte = reportesData.find(r => r.id === id);
+      if (!reporte) return;
+      
+      const contenido = `
+        <div class="border-l-4 border-teal-600 pl-4">
+          <div class="mb-4">
+            <span class="bg-teal-100 text-teal-800 text-sm font-semibold px-3 py-1 rounded">
+              ${reporte.tipo}
+            </span>
+          </div>
+          
+          <div class="space-y-3">
+            <div>
+              <p class="text-sm text-gray-600 font-semibold">📝 Descripción:</p>
+              <p class="text-gray-800">${reporte.descripcion}</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-600 font-semibold">👤 Reportado por:</p>
+                <p class="text-gray-800">${reporte.nombre}</p>
+              </div>
+              
+              <div>
+                <p class="text-sm text-gray-600 font-semibold">🏢 Entidad:</p>
+                <p class="text-gray-800">${reporte.entidad}</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-600 font-semibold">📅 Fecha:</p>
+                <p class="text-gray-800">${reporte.fecha_creacion.split(' ')[0]}</p>
+              </div>
+              
+              <div>
+                <p class="text-sm text-gray-600 font-semibold">🕐 Hora:</p>
+                <p class="text-gray-800">${reporte.fecha_creacion.split(' ')[1]}</p>
+              </div>
+            </div>
+            
+            <div>
+              <p class="text-sm text-gray-600 font-semibold">📍 Ubicación:</p>
+              <p class="text-gray-800 text-sm">
+                Latitud: ${reporte.lat.toFixed(5)}, Longitud: ${reporte.lng.toFixed(5)}
+              </p>
+              <a href="https://www.google.com/maps?q=${reporte.lat},${reporte.lng}" 
+                 target="_blank"
+                 class="text-teal-600 hover:text-teal-700 text-sm font-semibold">
+                🗺️ Ver en Google Maps →
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('contenidoModal').innerHTML = contenido;
+      document.getElementById('modalDetalle').classList.remove('hidden');
+    }
+    
+    // Cerrar modal
+    function cerrarModal() {
+      document.getElementById('modalDetalle').classList.add('hidden');
+    }
+    
+    // Eliminar reporte
+    async function eliminarReporte(id) {
+      if (!confirm('¿Estás seguro de eliminar este reporte?')) {
+        return;
+      }
+      
+      try {
+        const res = await fetch(`/eliminar/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          alert('✅ Reporte eliminado correctamente');
+          location.reload();
+        } else {
+          alert('❌ Error al eliminar el reporte');
+        }
+      } catch (error) {
+        alert('❌ Error de conexión');
+        console.error(error);
+      }
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modalDetalle').addEventListener('click', function(e) {
+      if (e.target === this) {
+        cerrarModal();
+      }
+    });
+  </script>
+
+</body>
+</html>
